@@ -1,20 +1,41 @@
 import os
-from flask import Flask, url_for, request, render_template, get_flashed_messages, flash, redirect, send_from_directory
+from flask import Flask, url_for, request, render_template, flash, redirect, send_from_directory, abort, session
 from werkzeug.utils import secure_filename
 from markupsafe import escape
-app = Flask(__name__)
+from werkzeug.middleware.proxy_fix import ProxyFix
 
+app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY')
+
+# Middleware
+app.wsgi_app = ProxyFix(app.wsgi_app)
+
+# Upload settings
 UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+# Logging
+app.logger.debug('A value for debugging')
+app.logger.warning('A warning occurred (%d apples)', 42)
+app.logger.error('An error occurred')
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
+def index():
+    if 'username' in session:
+        return f"Logged in as {escape(session['username'])}"
+
+    else:
+        return render_template('index.html')
+
+
+@app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     # resp = make_response(render_template(...))
     # resp.set_cookie('username', 'the username')
@@ -87,27 +108,29 @@ def about():
     return 'The about page'
 
 
-# @app.route('/login', methods=['POST', 'GET'])
+# @app.route('/login')
 # def login():
-#     error = None
-#     if request.method == 'POST':
-#         if valid_login(request.form['username'],
-#                        request.form['password']):
-#             return log_the_user_in(request.form['username'])
-#         else:
-#             error = 'Invalid username/password'
-#     # the code below is executed if the request method
-#     # was GET or the credentials were invalid
-#     return render_template('login.html', error=error)
-#
-#
-# def valid_login(x, y):
-#     pass
-#
-# def log_the_user_in(x):
-#     pass
+#     abort(401)
 
 
+@app.route('/login', methods=['POST', 'GET'])
+def login():
+    error = None
+    if request.method == 'POST':
+        if request.form['username'] == '':
+            flash(u'Invalid password provided')
+            error = 'Invalid password provided'
+        else:
+            flash('You were successfully logged in')
+            session['username'] = request.form['username']
+            return redirect(url_for('index'))
+    return render_template('login.html', error=error)
+
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('index'))
 
 # with app.test_request_context():
 #     print(url_for('login'))
