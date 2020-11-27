@@ -4,7 +4,6 @@ venv/
 *.pyc
 __pycache__/
 config.cfg
-*.db
 
 instance/
 
@@ -16,3 +15,4 @@ dist/
 build/
 *.egg-info/
 /flaskapp/static/profile_pics/
+*.db
