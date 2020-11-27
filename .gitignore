@@ -1,0 +1,17 @@
+venv/
+
+.idea
+*.pyc
+__pycache__/
+config.cfg
+
+instance/
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+dist/
+build/
+*.egg-info/
+/flaskapp/static/profile_pics/
