@@ -1,6 +1,4 @@
-from flaskapp import app
-import os
-
+from flaskapp import create_app
 
 
 # if test_config is None:
@@ -21,6 +19,7 @@ import os
 # from flaskr import auth
 # app.register_blueprint(auth.bp)
 
+app = create_app()
 
 if __name__ == '__main__':
     app.run(debug=True)
