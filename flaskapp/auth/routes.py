@@ -77,16 +77,6 @@ def twitch_callback():
     # return redirect(url_for('auth.twitch_json'))
 
 
-@auth.route('/twitch/refresh', methods=['GET'])
-def twitch_refresh():
-    token = session['oauth_token']
-
-    twitch = OAuth2Session(twitch_client_id, state=session['oauth_state'], redirect_uri=redirect_uri)
-    new_token = twitch.refresh_token(twitch_token_url, refresh_token=token['refresh_token'], client_id=twitch_client_id,
-                                     client_secret=twitch_client_secret)
-    return new_token
-
-
 @auth.route('/twitch', methods=['GET'])
 def twitch_json():
     twitch = OAuth2Session(twitch_client_id, token=session['twitch_oauth_token'])
