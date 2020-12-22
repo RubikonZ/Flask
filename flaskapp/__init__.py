@@ -4,7 +4,6 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
 from flaskapp.config import Config
-
 # create and configure the app
 
 db = SQLAlchemy()
@@ -29,10 +28,12 @@ def create_app(config_class=Config):
     from flaskapp.users.routes import users
     from flaskapp.main.routes import main
     from flaskapp.errors.handlers import errors
+    from flaskapp.auth.routes import auth
 
     app.register_blueprint(users)
     app.register_blueprint(posts)
     app.register_blueprint(main)
     app.register_blueprint(errors)
+    app.register_blueprint(auth)
 
     return app
