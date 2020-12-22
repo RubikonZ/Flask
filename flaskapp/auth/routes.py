@@ -112,3 +112,4 @@ def github_callback():
 def github_json():
     github = OAuth2Session(github_client_id, token=session['github_token'])
     return jsonify(github.get('https://api.github.com/user').json())
+
