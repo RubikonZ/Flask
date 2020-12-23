@@ -40,7 +40,11 @@ def dalerts_callback():
 @auth.route('/dalerts', methods=['GET'])
 def dalerts_json():
     dalerts = OAuth2Session(dalerts_client_id, token=session['dalerts_oauth_token'])
-    return jsonify(dalerts.get('https://www.donationalerts.com/api/v1/alerts/donations').json())
+
+    latest_donations = dalerts.get('https://www.donationalerts.com/api/v1/alerts/donations').json()
+    with open('donations.json', 'w', encoding='utf-8') as donation_storage:
+        json.dump(latest_donations, donation_storage, indent=4, ensure_ascii=False)
+    return latest_donations
 
 
 # TWITCH
@@ -71,7 +75,7 @@ def twitch_callback():
     session['oauth_token'] = token
 
     with open('storage.json', 'w') as json_file:
-        json.dump(token, json_file)
+        json.dump(token, json_file, indent=4, ensure_ascii=False)
 
     return jsonify(token)
     # return redirect(url_for('auth.twitch_json'))
