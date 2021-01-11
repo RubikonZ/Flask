@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div>
+    <article class="media content-section">
+        <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal" data-target="#deleteModal">Stop threads</button>
+    </article>
+</div>
+
+<!-- Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel">You sure you wanna stop threads?</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-footer">
+              <!-- Gotta change commented line to disable threads -->
+              <form action="{{ url_for('threads.stop') }}" method="POST">
+                  <input class="btn btn-danger" type="submit" value="Yes">
+              </form>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endblock content %}
+

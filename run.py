@@ -1,28 +1,45 @@
 from flaskapp import create_app
 import threading
-import twitch_bot as tb
+from twitch_bot import create_twitch_bot
+from telegram_bot import updater
+import time
 
 
-def start_twitch_bot():
-    # time.sleep(4)
-    print('Thread with twitch_bot server starting')
-
-    print('Retrieved oauth token to run twitch bot')
-    bot.run()
+def flask_thread():
+    print('flask thread starting')
+    flask.run('0.0.0.0')
 
 
-def start_flask_server():
-    app.run('0.0.0.0')
+def twitch_thread():
+    print('twitch thread starting')
+    twitch.run()
 
 
-bot = tb.Bot(tb.get_oauth_token())
-app = create_app()
+def telegram_thread():
+    updater.start_polling()
+
+
+twitch = create_twitch_bot()
+flask = create_app()
 
 
 if __name__ == '__main__':
-    t1 = threading.Thread(target=start_flask_server, args=())
-    t2 = threading.Thread(target=start_twitch_bot, args=())
+    t1 = threading.Thread(target=flask_thread)
+    # t2 = StoppableThread(target=twitch_thread)
+    # t3 = threading.Thread(target=telegram_thread)
     t1.start()
-    t2.start()
+
+    # t3.start()
+    # time.sleep(3)
+    # t2.start()
+
+    # if t2.is_alive():
+    #     print('t2 still running')
+    # else:
+    #     print('Completed')
+
     t1.join()
-    t2.join()
+    # t2.join()
+    # t3.join()
+
+

@@ -2,6 +2,7 @@ from twitchio.ext import commands
 from requests_oauthlib import OAuth2Session
 import json
 import os
+import asyncio
 
 # CONSTANT VARIABLES
 twitch_client_secret = os.environ.get('TWITCH_CLIENT_SECRET')
@@ -25,7 +26,10 @@ def get_oauth_token():
                                  client_secret=twitch_client_secret)
     twitch_token = f"oauth:{token['access_token']}"
     with open('storage.json', 'w') as storage_file:
-        json.dump(token, storage_file)
+        json.dump(token, storage_file, indent=4, ensure_ascii=False)
+
+    # "DEBUG"
+    print('Retrieved oauth token to run twitch bot')
     return twitch_token
 
 # https://github.com/PetterKraabol/Twitch-Python
@@ -33,23 +37,50 @@ def get_oauth_token():
 #     lambda message: print(message.channel, message.user.display_name, message.text))
 
 # TwitchIO implementation
-class Bot(commands.Bot):
-
-    def __init__(self, twitch_token):
-        print(twitch_token)
-        super().__init__(irc_token=twitch_token, client_id=client_id, nick=nick, prefix='!',
-                         initial_channels=['rubikon'])
+def create_twitch_bot():
+    bot = commands.Bot(
+        irc_token=get_oauth_token(),
+        client_id=client_id,
+        nick=nick,
+        prefix='!',
+        initial_channels=['rubikon'],
+    )
 
     # Events don't need decorators when subclassed
-    async def event_ready(self):
-        print(f'Ready | {self.nick}')
+    @bot.event
+    async def event_ready():
+        print(f'Ready | {bot.nick}')
 
-    async def event_message(self, message):
+    @bot.event
+    async def event_message(message):
         print(f'<{message.author.name}>: {message.content}')
-        await self.handle_commands(message)
+        await bot.handle_commands(message)
 
     # Commands use a different decorator
-    @commands.command(name='test')
-    async def my_command(self, ctx):
+    @bot.command(name='test')
+    async def my_command(ctx):
         await ctx.send(f'Hello @{ctx.author.name}!')
+
+    return bot
+
+
+# TwitchIO implementation
+# class Bot(commands.Bot):
+#
+#     def __init__(self, twitch_token):
+#         super().__init__(irc_token=twitch_token, client_id=client_id, nick=nick, prefix='!',
+#                          initial_channels=['rubikon'])
+#
+#     # Events don't need decorators when subclassed
+#     async def event_ready(self):
+#         print(f'Ready | {self.nick}')
+#
+#     async def event_message(self, message):
+#         print(f'<{message.author.name}>: {message.content}')
+#         await self.handle_commands(message)
+#
+#     # Commands use a different decorator
+#     @commands.command(name='test')
+#     async def my_command(self, ctx):
+#         await ctx.send(f'Hello @{ctx.author.name}!')
 

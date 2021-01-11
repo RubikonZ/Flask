@@ -1,7 +1,6 @@
 from flask import request, Blueprint, redirect, session, url_for
 from requests_oauthlib import OAuth2Session
 from flask.json import jsonify
-from time import time
 import json
 import os
 
@@ -116,4 +115,7 @@ def github_callback():
 def github_json():
     github = OAuth2Session(github_client_id, token=session['github_token'])
     return jsonify(github.get('https://api.github.com/user').json())
+
+
+
 
