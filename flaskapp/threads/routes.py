@@ -1,6 +1,8 @@
 from flask import request, Blueprint, redirect, session, url_for, flash, render_template
 import threading
 from twitch_bot import create_twitch_bot
+import time
+from datetime import datetime
 
 threads = Blueprint('threads', __name__)
 
@@ -9,21 +11,28 @@ class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
         regularly for the stopped() condition."""
 
-    def __init__(self,  *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(StoppableThread, self).__init__(*args, **kwargs)
-        self.running = threading.Event()
+        self._stop = threading.Event()  # initially FALSE
 
-    def start_app(self):
-        self.running.set()
+    def stop(self):
+        print('Stopping thread')
+        self._stop.set()
 
-    def stop_app(self):
-        self.running.clear()
+    def stopped(self):
+        return self._stop.isSet()  # running if FALSE
 
-    def is_running(self):
-        if self.running.is_set():
-            return "Twitch app is running"
-        else:
-            return "Twitch app is offline"
+
+name = 'twitch-thread'
+
+
+def get_stoppable_thread(thread_name):
+    all_threads = threading.enumerate()
+    for thread in all_threads:
+        if thread.getName() == thread_name:  # Works only for single thread (for now)
+            print(thread, thread.stopped())
+            return thread, thread.stopped()
+    return None, None
 
 
 def twitch_thread():
@@ -31,37 +40,31 @@ def twitch_thread():
     twitch.run()
 
 
-tw_thread = StoppableThread(target=twitch_thread) # Should be inside "start()" function so that you create new thread object every time
 twitch = create_twitch_bot()
-thread_running = None
 
 
 @threads.route("/start")
 def start():
-    global thread_running
-    if thread_running is not None:
+    thread, thread_not_running = get_stoppable_thread(name)
+
+    if thread_not_running == False:
         flash('Threads already running', 'info')
         return redirect(url_for('main.home'))
-
-    tw_thread.start_app()
-    thread_running = True
+    tw_thread = StoppableThread(target=twitch_thread, name=name)
+    tw_thread.setDaemon(True)
     tw_thread.start()
-    tw_thread.join()
-
-    # tw_thread.start_app()
+    # tw_thread.join()
     flash('Started twitch thread', 'success')
     return redirect(url_for('main.home'))
 
 
 @threads.route("/stop")
 def stop():
-    global thread_running, tw_thread
-    if thread_running is None:
+    thread, thread_not_running = get_stoppable_thread(name)
+    if thread_not_running or thread_not_running is None:
         flash('Threads are not running', 'info')
         return redirect(url_for('main.home'))
-    thread_running = False
-    tw_thread.stop_app()
-
-    flash('Stopped threads', 'success')
-    return redirect(url_for('main.home'))
-
+    if thread:
+        thread.stop()
+        flash('Stopped threads', 'success')
+        return redirect(url_for('main.home'))
