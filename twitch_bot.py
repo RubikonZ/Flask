@@ -2,7 +2,6 @@ from twitchio.ext import commands
 from requests_oauthlib import OAuth2Session
 import json
 import os
-import asyncio
 
 # CONSTANT VARIABLES
 twitch_client_secret = os.environ.get('TWITCH_CLIENT_SECRET')

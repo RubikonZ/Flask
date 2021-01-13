@@ -31,18 +31,30 @@ def dalerts_callback():
     dalerts = OAuth2Session(dalerts_client_id, state=session['dalerts_oauth_state'])
     token = dalerts.fetch_token(datoken_url, client_secret=dalerts_client_secret, authorization_response=request.url)
 
+    with open('dalerts_token.json', 'w') as json_file:
+        json.dump(token, json_file, indent=4, ensure_ascii=False)
+
     session['dalerts_oauth_token'] = token
+
     return jsonify({"token": token})
-    # return redirect(url_for('auth.dalerts_json'))
 
 
 @auth.route('/dalerts', methods=['GET'])
 def dalerts_json():
-    dalerts = OAuth2Session(dalerts_client_id, token=session['dalerts_oauth_token'])
+    # retrieving access token either from current session or from file
+    if session:
+        token = session['dalerts_oauth_token']
+    else:
+        with open('dalerts_token.json', 'r') as dalerts_token:
+            token = json.load(dalerts_token)
 
+    dalerts = OAuth2Session(dalerts_client_id, token=token)
     latest_donations = dalerts.get('https://www.donationalerts.com/api/v1/alerts/donations').json()
+
     with open('donations.json', 'w', encoding='utf-8') as donation_storage:
         json.dump(latest_donations, donation_storage, indent=4, ensure_ascii=False)
+
+    print('Retrieved fresh donations')
     return latest_donations
 
 
@@ -77,7 +89,6 @@ def twitch_callback():
         json.dump(token, json_file, indent=4, ensure_ascii=False)
 
     return jsonify(token)
-    # return redirect(url_for('auth.twitch_json'))
 
 
 @auth.route('/twitch', methods=['GET'])
