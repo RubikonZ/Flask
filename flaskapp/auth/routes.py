@@ -1,8 +1,10 @@
 from flask import request, Blueprint, redirect, session, url_for
 from requests_oauthlib import OAuth2Session
 from flask.json import jsonify
+import threading
 import json
 import os
+from datetime import datetime
 
 auth = Blueprint('auth', __name__)
 
@@ -13,6 +15,15 @@ dalerts_authorization_base_url = 'https://www.donationalerts.com/oauth/authorize
 datoken_url = 'https://www.donationalerts.com/oauth/token'
 dalerts_scope = ['oauth-donation-index']
 redirect_uri_dalerts = 'http://localhost:5000/dalerts/callback'
+
+
+def get_stoppable_thread(thread_name):
+    """ Checks if instance of stoppable thread exists (for now with hardcoded name)"""
+    all_threads = threading.enumerate()
+    for thread in all_threads:
+        if thread.getName() == thread_name:
+            return thread
+    return None
 
 
 # DONATION ALERTS
@@ -35,24 +46,56 @@ def dalerts_callback():
         json.dump(token, json_file, indent=4, ensure_ascii=False)
 
     session['dalerts_oauth_token'] = token
-
     return jsonify({"token": token})
 
 
-@auth.route('/dalerts', methods=['GET'])
+@auth.route('/dalerts', methods=['GET', 'POST'])
 def dalerts_json():
-    # retrieving access token either from current session or from file
-    if session:
+
+    if session:  # retrieving access token either from current session or from file
+        print('Continuing DAlerts session')
         token = session['dalerts_oauth_token']
+        dalerts = OAuth2Session(dalerts_client_id, token=token)
     else:
+
         with open('dalerts_token.json', 'r') as dalerts_token:
             token = json.load(dalerts_token)
+        if token['expires_at'] < datetime.utcnow().timestamp() - 100:
+            print('Refreshing Donation Alerts token')
 
-    dalerts = OAuth2Session(dalerts_client_id, token=token)
+            dalerts = OAuth2Session(dalerts_client_id, redirect_uri=redirect_uri_dalerts)
+            token = dalerts.refresh_token(datoken_url,
+                                          refresh_token=token['refresh_token'],
+                                          client_id=dalerts_client_id,
+                                          client_secret=dalerts_client_secret)
+            with open('dalerts_token.json', 'w') as dalerts_token:
+                json.dump(token, dalerts_token, indent=4, ensure_ascii=False)
+        else:
+            dalerts = OAuth2Session(dalerts_client_id, redirect_uri=redirect_uri_dalerts, token=token)
+
     latest_donations = dalerts.get('https://www.donationalerts.com/api/v1/alerts/donations').json()
 
-    with open('donations.json', 'w', encoding='utf-8') as donation_storage:
-        json.dump(latest_donations, donation_storage, indent=4, ensure_ascii=False)
+    last_id = 0
+    # Retrieving id of last donation and using it to get info about message
+    if os.path.exists('last_id'):
+        with open('last_id', 'r') as f:
+            last_id = int(f.read().strip())
+    new_donations = []
+    new_last_id = 0
+    for donation in latest_donations['data']:
+        if donation['id'] > last_id:
+            if donation['id'] > new_last_id:
+                new_last_id = donation['id']
+            new_donations.append(donation)
+
+    if new_last_id > last_id:
+        with open('last_id', 'w') as f:
+            f.write(str(new_last_id))
+        thread = get_stoppable_thread('twitch')
+        if thread.is_alive():
+            for donation in new_donations:
+                # Format of actual message sent to chat
+                thread.queue.put_nowait(f'DONATION: <{donation["username"]}>: {donation["message"]} ||| {donation["amount"]} {donation["currency"]}')
 
     print('Retrieved fresh donations')
     return latest_donations
@@ -81,7 +124,8 @@ def twitch_auth():
 @auth.route("/twitch/callback", methods=['GET'])
 def twitch_callback():
     twitch = OAuth2Session(twitch_client_id, state=session['twitch_oauth_state'], redirect_uri=redirect_uri)
-    token = twitch.fetch_token(token_url=twitch_token_url, client_secret=twitch_client_secret, include_client_id=True, authorization_response=request.url)
+    token = twitch.fetch_token(token_url=twitch_token_url, client_secret=twitch_client_secret, include_client_id=True,
+                               authorization_response=request.url)
 
     session['oauth_token'] = token
 
@@ -126,7 +170,3 @@ def github_callback():
 def github_json():
     github = OAuth2Session(github_client_id, token=session['github_token'])
     return jsonify(github.get('https://api.github.com/user').json())
-
-
-
-
