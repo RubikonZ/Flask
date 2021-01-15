@@ -20,6 +20,6 @@ if __name__ == '__main__':
     # # t3 = threading.Thread(target=telegram_thread)
     t1.start()
 
-    # t3.join()
+    t1.join()  # Main thread should be blocked
 
 

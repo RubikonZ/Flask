@@ -2,6 +2,7 @@ from flask import Blueprint, redirect, url_for, flash
 import threading
 from asyncio import get_event_loop, new_event_loop, set_event_loop, Event, ensure_future, Queue, sleep
 from twitch_bot import create_twitch_bot
+import time
 import flaskapp.auth.routes
 
 threads = Blueprint('threads', __name__)
@@ -51,11 +52,11 @@ class TwitchThread(threading.Thread):
     async def twitch_send(self):
         while not self._stop_event.is_set():
             msg = await self.queue.get()
-            await self.twitch.get_channel(channel).send(msg)
+            await self.twitch.get_channel().send(msg)
             await sleep(10)  # Delay between messages
 
     def stop(self):
-        print('Stopping thread')
+        # Stops twitch thread
         self._stop_event.set()
 
     def stopped(self):
@@ -74,18 +75,19 @@ class DalertsThreadTimer(threading.Timer):
 
 def get_stoppable_thread(thread_name):
     """ Checks if instance of stoppable thread exists (for now with hardcoded name)"""
+    output_thread = None
     all_threads = threading.enumerate()
-    print(all_threads)
     for thread in all_threads:
         if thread.getName() == thread_name:
-            print(thread)
-            return thread
-    return None
+            print(f'Got thread: {thread}')
+            output_thread = thread
+    return output_thread
 
 
 @threads.route("/start")
 def start():
     """ Supposedly should create new thread if it doesn't exist yet (Right now it just starts thread once """
+    print(f'Current threads: {threading.enumerate()}')
     for name in ['twitch', 'dalerts']:
         thread = get_stoppable_thread(name)
         if thread:
@@ -100,11 +102,13 @@ def start():
                 dalerts_thread.name = name
                 dalerts_thread.start()
             flash(f'Started {name} thread', 'success')
+    print(f'Threads after /start: {threading.enumerate()}')
     return redirect(url_for('main.home'))
 
 
 @threads.route("/stop")
 def stop():
+    print(f'Current threads: {threading.enumerate()}')
     for name in ['twitch', 'dalerts']:
         thread = get_stoppable_thread(name)
         if thread:
@@ -113,4 +117,6 @@ def stop():
                 flash(f'Stopped {name} thread', 'success')
         else:
             flash(f'Thread "{name}" is not running', 'info')
+
+    print(f'Threads after /stop: {threading.enumerate()}')  # Still gonna show all threads because it takes time to close/finish them
     return redirect(url_for('main.home'))

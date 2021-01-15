@@ -53,7 +53,6 @@ def dalerts_callback():
 def dalerts_json():
 
     if session:  # retrieving access token either from current session or from file
-        print('Continuing DAlerts session')
         token = session['dalerts_oauth_token']
         dalerts = OAuth2Session(dalerts_client_id, token=token)
     else:

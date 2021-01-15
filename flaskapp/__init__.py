@@ -3,7 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
-from flaskapp.config import Config
+# from flaskapp.config import Config
+from dynaconf import FlaskDynaconf
+from config import settings
 # create and configure the app
 
 db = SQLAlchemy()
@@ -11,18 +13,25 @@ bcrypt = Bcrypt()
 login_manager = LoginManager()
 login_manager.login_view = 'users.login'
 login_manager.login_message_category = 'info'
-
 mail = Mail()
 
 
-def create_app(config_class=Config):
+def create_app():
     app = Flask(__name__)
-    app.config.from_object(config_class)
 
-    db.init_app(app)
-    bcrypt.init_app(app)
-    login_manager.init_app(app)
-    mail.init_app(app)
+    # Manually setting SQLALCHEMY variables to avoid minor errors
+    # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+    # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+
+    # Using Dynaconf extension for configuration management
+    FlaskDynaconf(app)
+    app.config.from_object(settings)
+    app.config.load_extensions()
+
+    # db.init_app(app)
+    # bcrypt.init_app(app)
+    login_manager.init_app(app)  # For some reason have to keep uncommented
+    # mail.init_app(app)
 
     from flaskapp.posts.routes import posts
     from flaskapp.users.routes import users
