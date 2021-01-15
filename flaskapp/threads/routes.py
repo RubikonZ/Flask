@@ -52,7 +52,7 @@ class TwitchThread(threading.Thread):
     async def twitch_send(self):
         while not self._stop_event.is_set():
             msg = await self.queue.get()
-            await self.twitch.get_channel().send(msg)
+            await self.twitch.get_channel(channel).send(msg)
             await sleep(10)  # Delay between messages
 
     def stop(self):

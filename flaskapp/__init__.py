@@ -8,15 +8,18 @@ from dynaconf import FlaskDynaconf
 from config import settings
 # create and configure the app
 
+# Instances of extensions
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 login_manager = LoginManager()
 login_manager.login_view = 'users.login'
 login_manager.login_message_category = 'info'
 mail = Mail()
+# This is structured so that we can use each extension object of multiple apps
 
 
 def create_app():
+    # Creating of main app
     app = Flask(__name__)
 
     # Manually setting SQLALCHEMY variables to avoid minor errors
@@ -30,9 +33,10 @@ def create_app():
 
     # db.init_app(app)
     # bcrypt.init_app(app)
-    login_manager.init_app(app)  # For some reason have to keep uncommented
+    login_manager.init_app(app)  # For some reason have to keep uncommented ??????????????????
     # mail.init_app(app)
 
+    # Importing blueprints
     from flaskapp.posts.routes import posts
     from flaskapp.users.routes import users
     from flaskapp.main.routes import main
@@ -40,6 +44,7 @@ def create_app():
     from flaskapp.threads.routes import threads
     from flaskapp.errors.handlers import errors
 
+    # Initializing blueprints
     app.register_blueprint(users)
     app.register_blueprint(posts)
     app.register_blueprint(main)

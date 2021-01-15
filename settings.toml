@@ -1,12 +1,12 @@
 [default]
-OAUTHLIB_INSECURE_TRANSPORT = '1'
-SQLALCHEMY_TRACK_MODIFICATIONS = 'True'
+OAUTHLIB_INSECURE_TRANSPORT = 1
+SQLALCHEMY_TRACK_MODIFICATIONS = true
 SQLALCHEMY_DATABASE_URI = "sqlite:///site.db"
 channel = 'rubikon'
 TWITCH_BOT_NICKNAME = 'BotRubikot'
 MAIL_SERVER = 'smtp.gmail.com'
-MAIL_PORT = '587'
-MAIL_USE_TLS = 'True'
+MAIL_PORT = 587
+MAIL_USE_TLS = true
 dalerts_authorization_base_url = 'https://www.donationalerts.com/oauth/authorize'
 datoken_url = 'https://www.donationalerts.com/oauth/token'
 redirect_uri_dalerts = 'http://localhost:5000/dalerts/callback'

@@ -4,7 +4,7 @@ from telegram_bot import updater
 
 
 def flask_thread():
-    print('flask thread starting')
+    print('flask thread starting:')
     flask.run('0.0.0.0')
 
 
